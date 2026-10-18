@@ -44,15 +44,15 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
- # Ключи и конфиги с ключами
- android/key.properties
- *.jks
- *.keystore
- android/app/google-services.json
- ios/Runner/GoogleService-Info.plist
- lib/firebase_options.dart
- lib/core/config/supabase_config.dart
- firebase.json
+# Ключи и конфиги с ключами
+android/key.properties
+*.jks
+*.keystore
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+lib/core/config/supabase_config.dart
+firebase.json
 
- # Настройки редактора
- .vscode/
+# Настройки редактора
+.vscode/

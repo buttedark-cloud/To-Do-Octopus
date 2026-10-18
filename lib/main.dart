@@ -30,6 +30,7 @@ class _AppBootstrap extends StatefulWidget {
 
 class _AppBootstrapState extends State<_AppBootstrap> {
   bool _ready = false;
+  String? _error;
 
   ThemeProvider? _themeProvider;
   TodoProvider? _todoProvider;
@@ -47,35 +48,44 @@ class _AppBootstrapState extends State<_AppBootstrap> {
 
   static const _minimumLoadingScreenDuration = Duration(seconds: 3);
 
+  // Любая ошибка при запуске больше не оставляет человека на заставке
+  // навсегда: показываем текст ошибки (и по нему легко понять причину).
   Future<void> _bootstrap() async {
+    try {
+      await _runBootstrap();
+    } catch (e, st) {
+      debugPrint('Ошибка запуска: $e\n$st');
+      if (mounted) setState(() => _error = '$e');
+    }
+  }
+
+  Future<void> _runBootstrap() async {
     final minimumDelay = Future<void>.delayed(_minimumLoadingScreenDuration);
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
     // Supabase нужен только для картинок. Анонимный вход даёт каждому
     // телефону свою папку в хранилище (чужие файлы изменить нельзя).
-    await Supabase.initialize(
-      url: SupabaseConfig.url,
-      publishableKey: SupabaseConfig.anonKey,
-    );
     try {
+      await Supabase.initialize(url: SupabaseConfig.url, publishableKey: SupabaseConfig.anonKey);
       final supaAuth = Supabase.instance.client.auth;
       if (supaAuth.currentSession == null) {
         await supaAuth.signInAnonymously();
       }
-    } catch (_) {
-      // Нет сети — повторим попытку при первой загрузке картинки.
+    } catch (e) {
+      // Картинки — не критичная часть: без них приложение работает.
+      debugPrint('Supabase не запустился: $e');
     }
 
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+    await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
-    await NotificationService.instance.initialize();
-    await NotificationService.instance.requestPermissions();
-    await NotificationService.instance.requestExactAlarmPermissionIfNeeded();
+    // Уведомления тоже не должны мешать запуску приложения.
+    try {
+      await NotificationService.instance.initialize();
+      await NotificationService.instance.requestPermissions();
+      await NotificationService.instance.requestExactAlarmPermissionIfNeeded();
+    } catch (e) {
+      debugPrint('Уведомления не запустились: $e');
+    }
 
     final themeProvider = ThemeProvider();
     final todoProvider = TodoProvider();
@@ -117,10 +127,7 @@ class _AppBootstrapState extends State<_AppBootstrap> {
   @override
   Widget build(BuildContext context) {
     if (!_ready) {
-      return const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: _LoadingScreen(),
-      );
+      return MaterialApp(debugShowCheckedModeBanner: false, home: _LoadingScreen(error: _error));
     }
 
     return MultiProvider(
@@ -139,21 +146,40 @@ class _AppBootstrapState extends State<_AppBootstrap> {
 }
 
 class _LoadingScreen extends StatelessWidget {
-  const _LoadingScreen();
+  const _LoadingScreen({this.error});
+
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFDA0F),
-      body: Center(
-        child: Image.asset(
-          'assets/intro_1.gif',
-          width: double.infinity,
-          height: double.infinity,
-          // Если файла нет/имя не совпало — не роняем приложение с чёрным экраном, показываем индикатор загрузки.
-          errorBuilder: (context, error, stackTrace) =>
-              const CircularProgressIndicator(color: Color(0xFFFF9800)),
-        ),
+      body: Stack(
+        children: [
+          Center(
+            child: Image.asset(
+              'assets/intro_1.gif',
+              width: double.infinity,
+              height: double.infinity,
+              // Если файла нет — показываем индикатор загрузки.
+              errorBuilder: (context, e, stackTrace) => const CircularProgressIndicator(color: Color(0xFFFF9800)),
+            ),
+          ),
+          if (error != null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.92), borderRadius: BorderRadius.circular(12)),
+                child: Text(
+                  'Не удалось запустить приложение:\n$error',
+                  style: const TextStyle(color: Colors.black87, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Не даём Android удалить в релизной сборке ресурсы, на которые код ссылается
+     только по имени (иконка уведомлений). Без этого приложение падало при запуске. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_logo_octopus,@mipmap/ic_launcher,@drawable/frame1,@drawable/frame2" />

@@ -28,6 +28,14 @@
 - **Profile:** name and cropped avatar, dark theme, default colors, account deletion.
 - **Android home-screen widgets.**
 
+## Widgets
+
+Two Android home-screen widgets, light and dark. Tapping a widget opens the app.
+
+<p align="center">
+  <img src="docs/screenshots/widgets.png" width="60%" alt="Home-screen widgets" />
+</p>
+
 ## Tech stack
 
 Flutter · Dart · Provider · Firebase Auth + Cloud Firestore · Supabase Storage (RLS) · shared_preferences · flutter_local_notifications · image_picker / image_cropper / flutter_image_compress
