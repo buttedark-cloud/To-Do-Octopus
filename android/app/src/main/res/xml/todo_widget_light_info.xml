@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Файл кладётся в: android/app/src/main/res/xml/todo_widget_light_info.xml -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="96dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/widget_todo_light"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen"
+    android:label="To-Do Octopus (светлая)"
+    android:previewImage="@drawable/frame1" />

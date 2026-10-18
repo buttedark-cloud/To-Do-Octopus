@@ -21,7 +21,10 @@ class StickyNotePainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     final foldPaint = Paint()
-      ..color = Color.alphaBlend(Colors.black.withOpacity(0.15), baseColor)
+      ..color = Color.alphaBlend(
+        Colors.black.withValues(alpha: 0.15),
+        baseColor,
+      )
       ..style = PaintingStyle.fill;
     final foldPath = Path()
       ..moveTo(size.width - cornerSize, size.height)

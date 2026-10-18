@@ -15,4 +15,17 @@
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
+
+    <!-- Тема мини-окошка быстрого добавления задачи (QuickAddActivity) —
+         прозрачный фон окна, без заголовка, без анимации входа/выхода,
+         чтобы выглядело как всплывающее окошко поверх рабочего стола,
+         а не как полноценный экран приложения. -->
+    <style name="QuickAddTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>

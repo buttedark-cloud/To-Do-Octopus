@@ -3,7 +3,7 @@ import '../../../core/models/task_model.dart';
 import '../../../core/utils/date_formatter.dart';
 
 /// Шторка со списком просроченных задач.
-/// Раньше показывала фиктивные карточки по количеству, теперь — реальные задачи.
+
 class OverdueTasksBottomSheet extends StatelessWidget {
   final List<TaskModel> overdueTasks;
 

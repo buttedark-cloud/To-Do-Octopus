@@ -1,7 +1,3 @@
-/// Небольшие утилиты форматирования дат без внешних пакетов
-/// (чтобы не тянуть intl только ради одной функции).
-
-/// 30.08.2026
 String formatDate(DateTime date) {
   final day = date.day.toString().padLeft(2, '0');
   final month = date.month.toString().padLeft(2, '0');

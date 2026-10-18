@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math' as math;
 import '../../../core/providers/todo_provider.dart';
+import '../../../core/utils/capped_text_scale.dart';
 import '../../../core/providers/user_profile_provider.dart';
+import '../../../core/providers/settings_provider.dart';
 import '../../../core/models/todo_category_model.dart';
 import '../widgets/sticky_note_painter.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -27,6 +29,47 @@ class _TodoListsScreenState extends State<TodoListsScreen>
   // Пока не выбрана вручную — используется сегодняшняя дата.
   final Map<String, DateTime> _pendingDueDates = {};
 
+  // ВАЖНО: контроллеры текстовых полей карточки живут здесь, а не создаются
+  // заново внутри build()/_buildCardContent(). Раньше `TextEditingController()`
+  // создавался прямо в теле build-метода — при каждом перестроении виджета
+  // (например, сразу после выбора даты через setState) появлялся НОВЫЙ пустой
+  // контроллер, и TextField неожиданно терял то, что человек уже успел
+  // напечатать (а иногда переставал реагировать на ввод вовсе, пока не
+  // потеряет и не восстановит фокус). Теперь контроллер создаётся один раз
+  // на отсек и переиспользуется между перестроениями.
+  final Map<String, TextEditingController> _taskInputControllers = {};
+  final Map<String, TextEditingController> _titleControllers = {};
+
+  TextEditingController _taskControllerFor(String categoryId) {
+    return _taskInputControllers.putIfAbsent(
+      categoryId,
+      () => TextEditingController(),
+    );
+  }
+
+  TextEditingController _titleControllerFor(String categoryId, String title) {
+    return _titleControllers.putIfAbsent(
+      categoryId,
+      () => TextEditingController(text: title),
+    );
+  }
+
+  // Отсеки могут удаляться — чистим контроллеры удалённых отсеков, чтобы не
+  // копить утечки памяти.
+  void _pruneControllers(List<TodoCategoryModel> categories) {
+    final validIds = categories.map((c) => c.id).toSet();
+    for (final id in _taskInputControllers.keys.toList()) {
+      if (!validIds.contains(id)) {
+        _taskInputControllers.remove(id)?.dispose();
+      }
+    }
+    for (final id in _titleControllers.keys.toList()) {
+      if (!validIds.contains(id)) {
+        _titleControllers.remove(id)?.dispose();
+      }
+    }
+  }
+
   DateTime _dueDateFor(String categoryId) =>
       _pendingDueDates[categoryId] ?? DateTime.now();
 
@@ -42,6 +85,12 @@ class _TodoListsScreenState extends State<TodoListsScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    for (final c in _taskInputControllers.values) {
+      c.dispose();
+    }
+    for (final c in _titleControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -96,7 +145,7 @@ class _TodoListsScreenState extends State<TodoListsScreen>
           spacing: 12,
           runSpacing: 12,
           children: _stickerPalette.map((color) {
-            final isSelected = color.value == card.color.value;
+            final isSelected = color.toARGB32() == card.color.toARGB32();
             return GestureDetector(
               onTap: () => Navigator.pop(context, color),
               child: Container(
@@ -141,9 +190,46 @@ class _TodoListsScreenState extends State<TodoListsScreen>
       helpText: 'Дата задачи',
       cancelText: 'Отмена',
       confirmText: 'Готово',
+      builder: (context, child) => capTextScale(context, child),
     );
-    if (picked != null) {
-      setState(() => _pendingDueDates[categoryId] = picked);
+    if (picked == null || !context.mounted) return;
+
+    // Вместе с датой сразу спрашиваем время — это нужно, чтобы уведомление
+    // о задаче можно было прислать в точный момент, а не просто "в этот день".
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_dueDateFor(categoryId)),
+      helpText: 'Время задачи',
+      cancelText: 'Отмена',
+      confirmText: 'Готово',
+      builder: (context, child) => capTextScale(context, child),
+    );
+
+    final combined = DateTime(
+      picked.year,
+      picked.month,
+      picked.day,
+      pickedTime?.hour ?? 9,
+      pickedTime?.minute ?? 0,
+    );
+
+    setState(() => _pendingDueDates[categoryId] = combined);
+  }
+
+  void _addCategory(BuildContext context, TodoProvider provider) {
+    final added = provider.addCategory(
+      'Новый отсек',
+      context.read<SettingsProvider>().defaultTaskColor,
+    );
+    if (!added) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Достигнут лимит в ${TodoProvider.maxCategories} отсеков — '
+            'удалите ненужный, чтобы создать новый',
+          ),
+        ),
+      );
     }
   }
 
@@ -181,6 +267,7 @@ class _TodoListsScreenState extends State<TodoListsScreen>
   Widget build(BuildContext context) {
     final todoProvider = Provider.of<TodoProvider>(context);
     final categories = todoProvider.categories;
+    _pruneControllers(categories);
 
     return Scaffold(
       body: SafeArea(
@@ -189,8 +276,30 @@ class _TodoListsScreenState extends State<TodoListsScreen>
             final containerWidth = constraints.maxWidth * 0.85;
             final containerHeight = constraints.maxHeight * 0.7;
 
+            // ИСПРАВЛЕНИЕ БАГА (нет выхода из состояния "0 отсеков"):
+            // раньше здесь возвращался ТОЛЬКО текст, без кнопки "+" —
+            // если удалить все отсеки, добавить новый было уже нечем.
+            // Кнопка добавления теперь есть и в пустом состоянии тоже.
             if (categories.isEmpty) {
-              return const Center(child: Text('Нет отсеков. Добавьте новый!'));
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Нет отсеков. Добавьте новый!'),
+                    const SizedBox(height: 16),
+                    FloatingActionButton.small(
+                      heroTag: 'fab_button_two',
+                      onPressed: () => _addCategory(context, todoProvider),
+                      backgroundColor: const Color(0xFF8BC34A),
+                      child: const Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
 
             return Column(
@@ -198,85 +307,89 @@ class _TodoListsScreenState extends State<TodoListsScreen>
               children: [
                 const Spacer(),
                 Center(
-                  child: SizedBox(
-                    width: containerWidth,
-                    height: containerHeight,
-                    child: AnimatedBuilder(
-                      animation: _animationController,
-                      builder: (context, child) {
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: List.generate(categories.length, (index) {
-                            final reversedIndex = categories.length - 1 - index;
-                            final card = categories[reversedIndex];
-                            final isTopCard = reversedIndex == 0;
+                  // Карточки
+                  child: Padding(
+                    // Задаем отступ только слева (например, 16 пикселей)
+                    padding: const EdgeInsets.only(left: 18.0),
+                    child: SizedBox(
+                      width: containerWidth,
+                      height: containerHeight,
+                      child: AnimatedBuilder(
+                        animation: _animationController,
+                        builder: (context, child) {
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: List.generate(categories.length, (index) {
+                              final reversedIndex =
+                                  categories.length - 1 - index;
+                              final card = categories[reversedIndex];
+                              final isTopCard = reversedIndex == 0;
 
-                            // Расчет трансформаций при ручном свайпе или автоматическом улете
-                            if (isTopCard) {
-                              double offsetX = _dragX;
-                              double offsetY = _dragY;
-                              double rotation =
-                                  (_dragX / containerWidth) * (math.pi / 6);
+                              // Расчет трансформаций при ручном свайпе или автоматическом улете
+                              if (isTopCard) {
+                                double offsetX = _dragX;
+                                double offsetY = _dragY;
+                                double rotation =
+                                    (_dragX / containerWidth) * (math.pi / 6);
 
-                              if (_isAnimating) {
-                                final val = _animationController.value;
-                                offsetX =
-                                    _dragX +
-                                    (val * (containerWidth - _dragX + 100));
-                                offsetY =
-                                    _dragY +
-                                    (val * (containerHeight - _dragY + 100));
-                                rotation = rotation + (val * (math.pi / 6));
+                                if (_isAnimating) {
+                                  final val = _animationController.value;
+                                  offsetX =
+                                      _dragX +
+                                      (val * (containerWidth - _dragX + 100));
+                                  offsetY =
+                                      _dragY +
+                                      (val * (containerHeight - _dragY + 100));
+                                  rotation = rotation + (val * (math.pi / 6));
+                                }
+
+                                return Transform.translate(
+                                  offset: Offset(offsetX, offsetY),
+                                  child: Transform.rotate(
+                                    angle: rotation,
+                                    child: _buildGestureWrapper(
+                                      card,
+                                      containerWidth,
+                                      containerHeight,
+                                      todoProvider,
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              // Каскадные слои сзади
+                              final positionFactor = reversedIndex.toDouble();
+                              if (positionFactor > 3) {
+                                return const SizedBox.shrink();
                               }
 
                               return Transform.translate(
-                                offset: Offset(offsetX, offsetY),
-                                child: Transform.rotate(
-                                  angle: rotation,
-                                  child: _buildGestureWrapper(
-                                    card,
-                                    containerWidth,
-                                    containerHeight,
-                                    todoProvider,
-                                  ),
+                                offset: Offset(
+                                  -positionFactor * 10,
+                                  -positionFactor * 18,
+                                ),
+                                child: _buildCardContent(
+                                  card,
+                                  containerWidth,
+                                  containerHeight,
+                                  todoProvider,
+                                  isTopCard: false,
                                 ),
                               );
-                            }
-
-                            // Каскадные слои сзади
-                            final positionFactor = reversedIndex.toDouble();
-                            if (positionFactor > 3) {
-                              return const SizedBox.shrink();
-                            }
-
-                            return Transform.translate(
-                              offset: Offset(
-                                -positionFactor * 12,
-                                -positionFactor * 18,
-                              ),
-                              child: _buildCardContent(
-                                card,
-                                containerWidth,
-                                containerHeight,
-                                todoProvider,
-                                isTopCard: false,
-                              ),
-                            );
-                          }),
-                        );
-                      },
+                            }),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 30),
                 // Кнопка создания новой карточки (оставим её системной для простоты)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 24.0),
-                  child: FloatingActionButton(
-                    onPressed: () => todoProvider.addCategory(
-                      'Новый отсек',
-                      Colors.orangeAccent.shade100,
-                    ),
+                  child: FloatingActionButton.small(
+                    heroTag: 'fab_button_two',
+                    onPressed: () => _addCategory(context, todoProvider),
                     backgroundColor: const Color(0xFF8BC34A),
                     child: const Icon(Icons.add, color: Colors.white, size: 30),
                   ),
@@ -333,10 +446,10 @@ class _TodoListsScreenState extends State<TodoListsScreen>
     final tasks = provider.getTasksForCategory(card.id);
     final authorName = context.watch<UserProfileProvider>().name;
 
-    final TextEditingController taskInputController = TextEditingController();
-    final TextEditingController titleEditController = TextEditingController(
-      text: card.title,
-    );
+    // Контроллеры больше не создаются здесь — берём стабильные экземпляры,
+    // привязанные к id отсека (см. комментарий в начале класса).
+    final taskInputController = _taskControllerFor(card.id);
+    final titleEditController = _titleControllerFor(card.id, card.title);
 
     Path createCardPath(Size size) {
       return Path()
@@ -355,7 +468,7 @@ class _TodoListsScreenState extends State<TodoListsScreen>
         clipper: StickyNoteClipper(createCardPath),
         color: Colors.transparent,
         elevation: 5,
-        shadowColor: Colors.black.withOpacity(0.3),
+        shadowColor: Colors.black.withValues(alpha: 0.3),
         child: CustomPaint(
           painter: StickyNotePainter(baseColor: card.color),
           child: Padding(
@@ -384,7 +497,8 @@ class _TodoListsScreenState extends State<TodoListsScreen>
                         },
                         child: TextFormField(
                           controller: titleEditController,
-                          enabled: isTopCard, // Переименовать можно только верхнюю
+                          enabled:
+                              isTopCard, // Переименовать можно только верхнюю
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -476,14 +590,14 @@ class _TodoListsScreenState extends State<TodoListsScreen>
                           ),
                         ),
                       ),
-                      // Кнопка-календарь — выбрать дату для новой задачи
+                      // Кнопка-календарь — выбрать дату и время для новой задачи
                       IconButton(
                         icon: const Icon(
                           Icons.calendar_month_outlined,
                           color: Colors.black87,
                           size: 22,
                         ),
-                        tooltip: 'Выбрать дату',
+                        tooltip: 'Выбрать дату и время',
                         onPressed: () => _pickDueDate(context, card.id),
                       ),
                       IconButton(
@@ -506,13 +620,16 @@ class _TodoListsScreenState extends State<TodoListsScreen>
                       ),
                     ],
                   ),
-                  // Подпись с выбранной датой — тоже открывает выбор даты по тапу
+                  // Подпись с выбранными датой и временем — тоже открывает
+                  // выбор даты по тапу
                   GestureDetector(
                     onTap: () => _pickDueDate(context, card.id),
                     child: Padding(
                       padding: const EdgeInsets.only(top: 2, bottom: 6),
                       child: Text(
-                        'Дата: ${formatDate(_dueDateFor(card.id))}',
+                        'Дата: ${formatDate(_dueDateFor(card.id))} · '
+                        '${_dueDateFor(card.id).hour.toString().padLeft(2, '0')}:'
+                        '${_dueDateFor(card.id).minute.toString().padLeft(2, '0')}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black54,

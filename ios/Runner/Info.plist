@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+    <string>Нужен доступ к галерее, чтобы прикрепить фото к заметке</string>
 </dict>
 </plist>

@@ -1,16 +1,13 @@
-/// Общая модель задачи для всего приложения.
-/// Используется на Главной, в Списке задач и в Календаре —
-/// один источник правды, поэтому храним её отдельно от экранов.
 class TaskModel {
   final String id;
   String title;
   bool isCompleted;
-  DateTime? dueDate; // Дата для календаря
-  String categoryId; // К какой карточке-отсеку принадлежит
+  DateTime? dueDate;
+  String categoryId;
 
-  // Запоминает исходный отсек, если задачу автоматически перекинуло в
-  // "Сделано" по галочке — чтобы можно было вернуть её на место при снятии галочки.
   String? previousCategoryId;
+
+  bool notificationScheduled;
 
   TaskModel({
     required this.id,
@@ -19,5 +16,28 @@ class TaskModel {
     this.dueDate,
     required this.categoryId,
     this.previousCategoryId,
+    this.notificationScheduled = false,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'isCompleted': isCompleted,
+    'dueDate': dueDate?.toIso8601String(),
+    'categoryId': categoryId,
+    'previousCategoryId': previousCategoryId,
+    'notificationScheduled': notificationScheduled,
+  };
+
+  factory TaskModel.fromJson(Map<String, dynamic> json) => TaskModel(
+    id: json['id'] as String,
+    title: json['title'] as String,
+    isCompleted: json['isCompleted'] as bool? ?? false,
+    dueDate: json['dueDate'] != null
+        ? DateTime.tryParse(json['dueDate'] as String)
+        : null,
+    categoryId: json['categoryId'] as String,
+    previousCategoryId: json['previousCategoryId'] as String?,
+    notificationScheduled: json['notificationScheduled'] as bool? ?? false,
+  );
 }
