@@ -70,4 +70,5 @@ Output: `build/app/outputs/flutter-apk/app-release.apk`. Prebuilt versions are o
 
 ## Author
 
-[YOUR NAME](https://github.com/YOUR-NAME)
+[Veronica](https://github.com/buttedark-cloud) · [mail: veronikamalin2000@gmail.com LinkedIn:]
+
