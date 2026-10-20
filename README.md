@@ -111,7 +111,7 @@ lib/
 ```bash
 flutter build apk --release
 ```
-Готовый файл: `build/app/outputs/flutter-apk/app-release.apk`. Скачать собранную версию можно в разделе [Releases](../../releases).
+Готовый файл: `build/app/outputs/flutter-apk/To-Do_Octopus_app-arm64-v8a-release.apk`. Скачать собранную версию можно в разделе [Releases](../../releases).
 
 ## Планы
 
