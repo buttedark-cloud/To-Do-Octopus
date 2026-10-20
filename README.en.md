@@ -66,7 +66,7 @@ Flutter · Dart · Provider · Firebase Auth + Cloud Firestore · Supabase Stora
 ```bash
 flutter build apk --release
 ```
-Output: `build/app/outputs/flutter-apk/app-release.apk`. Prebuilt versions are on the [Releases](../../releases) page.
+Output: `build/app/outputs/flutter-apk/To-Do_Octopus_app-arm64-v8a-release.apk`. Prebuilt versions are on the [Releases](../../releases) page.
 
 ## Author
 
