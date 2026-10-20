@@ -56,3 +56,4 @@ firebase.json
 
 # Настройки редактора
 .vscode/
+.kotlin/
