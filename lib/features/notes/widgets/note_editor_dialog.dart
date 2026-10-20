@@ -54,6 +54,7 @@ class _NoteEditorDialogState extends State<_NoteEditorDialog> {
   DateTime? _reminderAt;
   bool _showEmojiPicker = false;
   bool _processingImage = false;
+  final ScrollController _emojiScroll = ScrollController();
 
   // Дата создания заметки — для новой заметки это "сейчас" (совпадёт с
   // тем, что реально запишется в NoteModel.createdAt при сохранении),
@@ -81,6 +82,7 @@ class _NoteEditorDialogState extends State<_NoteEditorDialog> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _emojiScroll.dispose();
     super.dispose();
   }
 
@@ -438,25 +440,37 @@ class _NoteEditorDialogState extends State<_NoteEditorDialog> {
                         crossFadeState: _showEmojiPicker
                             ? CrossFadeState.showFirst
                             : CrossFadeState.showSecond,
+                        // Сетка прокручивается внутри своей рамки: фиксированная
+                        // высота + полоса прокрутки, чтобы были видны ВСЕ
+                        // смайлики, а не только первые рядов три.
                         firstChild: SizedBox(
-                          height: 130,
-                          child: GridView.builder(
-                            padding: const EdgeInsets.only(top: 8),
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 8,
+                          height: 150,
+                          child: Scrollbar(
+                            controller: _emojiScroll,
+                            thumbVisibility: true,
+                            child: GridView.builder(
+                              controller: _emojiScroll,
+                              padding: const EdgeInsets.only(top: 8, right: 8),
+                              physics: const ClampingScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 8,
+                                  ),
+                              itemCount: emojiPalette.length,
+                              itemBuilder: (context, index) {
+                                final emoji = emojiPalette[index];
+                                return InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: () => _insertEmoji(emoji),
+                                  child: Center(
+                                    child: Text(
+                                      emoji,
+                                      style: const TextStyle(fontSize: 20),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                            itemCount: emojiPalette.length,
-                            itemBuilder: (context, index) {
-                              final emoji = emojiPalette[index];
-                              return InkWell(
-                                borderRadius: BorderRadius.circular(8),
-                                onTap: () => _insertEmoji(emoji),
-                                child: Center(
-                                  child: Text(emoji, style: const TextStyle(fontSize: 20)),
-                                ),
-                              );
-                            },
                           ),
                         ),
                         secondChild: const SizedBox.shrink(),

@@ -96,7 +96,7 @@ class NotificationService {
         priority: Priority.high,
         // Маленькая иконка в статус-баре всегда бело-серая (требование
         // Android), а большая внутри уведомления может быть цветной.
-        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+        largeIcon: const DrawableResourceAndroidBitmap('@mipmap/launcher_icon'),
       ),
       iOS: const DarwinNotificationDetails(),
     );
