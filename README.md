@@ -126,4 +126,4 @@ flutter build apk --release
 
 ## Автор
 
-[Veronica](https://github.com/buttedark-cloud) · [почта: veronikamalin2000@gmail.com LinkedIn:]
+[Veronica](https://github.com/buttedark-cloud) · [почта: veronikamalin2000@gmail.com LinkedIn: https://www.linkedin.com/in/veronikamalinovskaya]
