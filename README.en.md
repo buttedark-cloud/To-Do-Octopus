@@ -70,5 +70,5 @@ Output: `build/app/outputs/flutter-apk/To-Do_Octopus_app-arm64-v8a-release.apk`.
 
 ## Author
 
-[Veronica](https://github.com/buttedark-cloud) · [mail: veronikamalin2000@gmail.com LinkedIn:]
+[Veronica](https://github.com/buttedark-cloud) · [mail: veronikamalin2000@gmail.com LinkedIn: https://www.linkedin.com/in/veronikamalinovskaya]
 
