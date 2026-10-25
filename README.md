@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Firebase-Auth%20%2B%20Firestore-FFCA28?logo=firebase&logoColor=black" alt="Firebase" />
   <img src="https://img.shields.io/badge/Supabase-Storage-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
-</p>![Uploading photo_7_2026-10-19_18-59-17.jpg…]()
+</p>
 
 
 <!-- СКРИНШОТЫ: положи файлы в docs/screenshots/ и поправь имена при необходимости -->
