@@ -20,15 +20,16 @@
 
 <!-- СКРИНШОТЫ: положи файлы в docs/screenshots/ и поправь имена при необходимости -->
 <p align="center">
+  <img src="docs/screenshots/regist.png" width="23%" alt="Регистрация" />
   <img src="docs/screenshots/home.png" width="23%" alt="Главная" />
   <img src="docs/screenshots/lists.png" width="23%" alt="Списки" />
   <img src="docs/screenshots/calendar.png" width="23%" alt="Календарь" />
-  <img src="docs/screenshots/notes.png" width="23%" alt="Заметки" />
+  
 </p>
 <p align="center">
   <img src="docs/screenshots/dark.png" width="23%" alt="Тёмная тема" />
   <img src="docs/screenshots/profile.png" width="23%" alt="Профиль" />
-  <img src="docs/screenshots/regist.png" width="23%" alt="Регистрация" />
+  <img src="docs/screenshots/notes.png" width="23%" alt="Заметки" />
 
 </p>
 
