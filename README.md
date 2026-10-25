@@ -16,7 +16,6 @@
   <img src="https://img.shields.io/badge/Supabase-Storage-3ECF8E?logo=supabase&logoColor=white" alt="Supabase" />
   <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
   <img width="576" height="1280" alt="photo_2026-10-25_21-28-27" src="https://github.com/user-attachments/assets/e393f6d0-915c-4025-9f6f-f3cc8a97f6eb" />
-
 </p>![Uploading photo_7_2026-10-19_18-59-17.jpg…]()
 
 
@@ -30,6 +29,7 @@
 <p align="center">
   <img src="docs/screenshots/dark.png" width="23%" alt="Тёмная тема" />
   <img src="docs/screenshots/profile.png" width="23%" alt="Профиль" />
+  <img width="576" height="1280" alt="photo_2026-10-25_21-28-27" src="https://github.com/user-attachments/assets/b0e41324-0a86-46c0-b952-2e848fe5b9fb" />
 </p>
 
 ## Возможности
