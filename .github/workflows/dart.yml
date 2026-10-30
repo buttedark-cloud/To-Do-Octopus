@@ -2,9 +2,9 @@ name: Flutter CI
 
 on:
   push:
-    branches: [ "main" ] # Поменяйте на master, если у вас главная ветка называется master
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
 
 jobs:
   build:
@@ -13,14 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Вот этот шаг устанавливает Flutter SDK на сервер GitHub:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # Теперь зависимости установятся без ошибок:
       - name: Install dependencies
         run: flutter pub get
+
+      # НАЧАЛО ИСПРАВЛЕНИЯ: Создаем структуру папок и файлы-заглушки для прохождения теста
+      - name: Create missing config files for CI
+        run: |
+          mkdir -p core/config
+          echo "class SupabaseConfig { static const String url = ''; static const String anonKey = ''; }" > core/config/supabase_config.dart
+          echo "class DefaultFirebaseOptions { static var currentPlatform; }" > firebase_options.dart
+      # КОНЕЦ ИСПРАВЛЕНИЯ
 
       - name: Analyze project source
         run: flutter analyze
