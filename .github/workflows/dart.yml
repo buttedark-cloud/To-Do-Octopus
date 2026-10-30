@@ -20,14 +20,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # НАЧАЛО ИСПРАВЛЕНИЯ: Создаем структуру папок и файлы-заглушки для прохождения теста
+      # ИСПРАВЛЕНО: Создаем файлы-заглушки строго внутри папки lib/
       - name: Create missing config files for CI
         run: |
-          mkdir -p core/config
-          echo "class SupabaseConfig { static const String url = ''; static const String anonKey = ''; }" > core/config/supabase_config.dart
-          echo "class DefaultFirebaseOptions { static var currentPlatform; }" > firebase_options.dart
-      # КОНЕЦ ИСПРАВЛЕНИЯ
+          mkdir -p lib/core/config
+          echo "class SupabaseConfig { static const String url = ''; static const String anonKey = ''; }" > lib/core/config/supabase_config.dart
+          echo "class DefaultFirebaseOptions { static var currentPlatform; }" > lib/firebase_options.dart
 
+      # Теперь анализатор найдет файлы на своих местах
       - name: Analyze project source
         run: flutter analyze
 
