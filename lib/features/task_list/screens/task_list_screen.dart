@@ -11,12 +11,7 @@ import '../../../core/utils/date_formatter.dart';
 class TaskListScreen extends StatelessWidget {
   const TaskListScreen({super.key});
 
-  Widget _buildTaskTile(
-    BuildContext context,
-    TodoProvider provider,
-    TaskModel task, {
-    bool showCategoryLine = true,
-  }) {
+  Widget _buildTaskTile(BuildContext context, TodoProvider provider, TaskModel task, {bool showCategoryLine = true}) {
     final category = provider.getCategoryById(task.categoryId);
     final categoryColor = category?.color ?? Colors.grey;
 
@@ -27,10 +22,7 @@ class TaskListScreen extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         margin: const EdgeInsets.symmetric(vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
+        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (_) => provider.deleteTask(task.id),
@@ -38,35 +30,24 @@ class TaskListScreen extends StatelessWidget {
         margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: categoryColor.withValues(alpha: 0.6),
-            width: 1.5,
-          ),
+          side: BorderSide(color: categoryColor.withValues(alpha: 0.6), width: 1.5),
         ),
         child: ListTile(
-          leading: Checkbox(
-            value: task.isCompleted,
-            onChanged: (_) => provider.toggleTaskStatus(task.id),
-          ),
-          title: Text(
-            task.title,
-            style: TextStyle(
-              decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-            ),
-          ),
+          leading: Checkbox(value: task.isCompleted, onChanged: (_) => provider.toggleTaskStatus(task.id)),
+          title: Text(task.title, style: TextStyle(decoration: task.isCompleted ? TextDecoration.lineThrough : null)),
           subtitle: Text(
             [
               if (showCategoryLine && category != null) category.title,
-              if (task.dueDate != null) formatDate(task.dueDate!),
+              if (task.dueDate != null)
+                'Срок: ${formatDate(task.dueDate!)}'
+              else if (task.createdAt != null)
+                'Создана ${formatDate(task.createdAt!)}',
             ].join(' • '),
           ),
           trailing: Container(
             width: 12,
             height: 12,
-            decoration: BoxDecoration(
-              color: categoryColor,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: categoryColor, shape: BoxShape.circle),
           ),
         ),
       ),
@@ -76,9 +57,7 @@ class TaskListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TodoProvider>();
-    final groupByCategory = context
-        .watch<SettingsProvider>()
-        .groupTasksByCategory;
+    final groupByCategory = context.watch<SettingsProvider>().groupTasksByCategory;
     final tasks = provider.allTasks;
 
     if (tasks.isEmpty) {
@@ -89,8 +68,7 @@ class TaskListScreen extends StatelessWidget {
       return ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: tasks.length,
-        itemBuilder: (context, index) =>
-            _buildTaskTile(context, provider, tasks[index]),
+        itemBuilder: (context, index) => _buildTaskTile(context, provider, tasks[index]),
       );
     }
 
@@ -114,24 +92,14 @@ class TaskListScreen extends StatelessWidget {
                   Container(
                     width: 10,
                     height: 10,
-                    decoration: BoxDecoration(
-                      color: category.color,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: category.color, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    category.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
+                  Text(category.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ],
               ),
             ),
-            for (final task in categoryTasks)
-              _buildTaskTile(context, provider, task, showCategoryLine: false),
+            for (final task in categoryTasks) _buildTaskTile(context, provider, task, showCategoryLine: false),
           ],
         );
       },

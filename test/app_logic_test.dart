@@ -49,14 +49,11 @@ void main() {
     });
 
     test('TaskModel: старые данные без новых полей читаются', () {
-      final restored = TaskModel.fromJson({
-        'id': '7',
-        'title': 'Старая задача',
-        'categoryId': '1',
-      });
+      final restored = TaskModel.fromJson({'id': '7', 'title': 'Старая задача', 'categoryId': '1'});
 
       expect(restored.isCompleted, isFalse);
       expect(restored.notificationScheduled, isFalse);
+      expect(restored.createdAt, isNull);
     });
   });
 
@@ -87,6 +84,17 @@ void main() {
       final overdue = provider.getOverdueTasks();
       expect(overdue.length, 1);
       expect(overdue.single.title, 'Просрочена');
+    });
+
+    test('задача без срока: нет дедлайна, есть дата создания, не просрочена', () {
+      final provider = TodoProvider();
+
+      provider.addTask(title: 'Без срока', categoryId: '1');
+
+      final task = provider.allTasks.single;
+      expect(task.dueDate, isNull);
+      expect(task.createdAt, isNotNull);
+      expect(provider.getOverdueTasks(), isEmpty);
     });
 
     test('нельзя создать больше 20 карточек', () {
