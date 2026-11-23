@@ -1,0 +1,51 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Та же версия Flutter, что и у меня локально (flutter --version).
+      # Если поменяешь версию у себя — поменяй и здесь.
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+
+      # Эти файлы не хранятся в git (в них ключи), поэтому для проверки
+      # создаём безопасные заглушки.
+      - name: Create config files that are not stored in git
+        run: |
+          cp lib/core/config/supabase_config.example.dart lib/core/config/supabase_config.dart
+          cat > lib/firebase_options.dart <<'EOF2'
+          import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
+
+          class DefaultFirebaseOptions {
+            static const FirebaseOptions currentPlatform = FirebaseOptions(
+              apiKey: 'ci',
+              appId: 'ci',
+              messagingSenderId: 'ci',
+              projectId: 'ci',
+            );
+          }
+          EOF2
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # --no-fatal-infos: подсказки (info) не считаются ошибкой,
+      # проверка падает только на настоящих предупреждениях и ошибках.
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run tests
+        run: flutter test
